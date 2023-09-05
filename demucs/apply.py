@@ -135,7 +135,7 @@ def apply_model(model: tp.Union[BagOfModels, Model],
                 overlap: float = 0.25, transition_power: float = 1.,
                 progress: bool = False, device=None,
                 num_workers: int = 0, segment: tp.Optional[float] = None,
-                pool=None) -> th.Tensor:
+                pool=None, ws=None) -> th.Tensor:
     """
     Apply model to a given mixture.
 
@@ -186,7 +186,7 @@ def apply_model(model: tp.Union[BagOfModels, Model],
             original_model_device = next(iter(sub_model.parameters())).device
             sub_model.to(device)
 
-            out = apply_model(sub_model, mix, **kwargs)
+            out = apply_model(sub_model, mix, ws=ws, **kwargs)
             sub_model.to(original_model_device)
             for k, inst_weight in enumerate(model_weights):
                 out[:, k, :, :] *= inst_weight
@@ -213,7 +213,7 @@ def apply_model(model: tp.Union[BagOfModels, Model],
         for _ in range(shifts):
             offset = random.randint(0, max_shift)
             shifted = TensorChunk(padded_mix, offset, length + max_shift - offset)
-            shifted_out = apply_model(model, shifted, **kwargs)
+            shifted_out = apply_model(model, shifted, ws=ws, **kwargs)
             out += shifted_out[..., max_shift - offset:]
         out /= shifts
         assert isinstance(out, th.Tensor)
@@ -245,7 +245,7 @@ def apply_model(model: tp.Union[BagOfModels, Model],
             futures.append((future, offset))
             offset += segment_length
         if progress:
-            futures = tqdm.tqdm(futures, unit_scale=scale, ncols=120, unit='seconds')
+            futures = tqdm.tqdm(futures, unit_scale=scale, ncols=120, unit='seconds', ws=ws)
         for future, offset in futures:
             chunk_out = future.result()
             chunk_length = chunk_out.shape[-1]

@@ -125,7 +125,7 @@ def get_parser():
     return parser
 
 
-def main(opts=None):
+def main(opts=None, ws=None):
     parser = get_parser()
     args = parser.parse_args(opts)
 
@@ -172,7 +172,7 @@ def main(opts=None):
         wav /= ref.std()
         sources = apply_model(model, wav[None], device=args.device, shifts=args.shifts,
                               split=args.split, overlap=args.overlap, progress=True,
-                              num_workers=args.jobs, segment=args.segment)[0]
+                              num_workers=args.jobs, segment=args.segment, ws=ws)[0]
         sources *= ref.std()
         sources += ref.mean()
 
